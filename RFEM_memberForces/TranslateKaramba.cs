@@ -41,10 +41,15 @@ namespace RFEM_memberForces
         protected override void SolveInstance(IGH_DataAccess DA)
         {
             bool go = false;
-            if (!DA.GetData(1,ref go)) { return; }
             Karamba.Models.GH_Model testiModel = null;
-            if (!DA.GetData(0,ref testiModel)) { return; }
-            Rhino.RhinoApp.WriteLine("Success!!");
+            if (!DA.GetData(1,ref go)) { return; }
+            if (!DA.GetData(0, ref testiModel)) { return; }
+            if (go)
+            {
+                KarambaToRFEM.SendModel(testiModel.Value);
+            }
+            
+            
         }
 
         /// <summary>

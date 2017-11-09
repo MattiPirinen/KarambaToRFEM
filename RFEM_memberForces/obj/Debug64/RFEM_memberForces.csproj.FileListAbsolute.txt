@@ -3,3 +3,8 @@ c:\users\pima\documents\visual studio 2015\Projects\RFEM_memberForces\RFEM_membe
 c:\users\pima\documents\visual studio 2015\Projects\RFEM_memberForces\RFEM_memberForces\obj\Debug64\RFEM_memberForces.csprojResolveAssemblyReference.cache
 c:\users\pima\documents\visual studio 2015\Projects\RFEM_memberForces\RFEM_memberForces\obj\Debug64\RFEM_memberForces.dll
 c:\users\pima\documents\visual studio 2015\Projects\RFEM_memberForces\RFEM_memberForces\obj\Debug64\RFEM_memberForces.pdb
+C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\bin\RFEM_memberForces.dll
+C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\bin\RFEM_memberForces.pdb
+C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.csprojResolveAssemblyReference.cache
+C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.dll
+C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.pdb
