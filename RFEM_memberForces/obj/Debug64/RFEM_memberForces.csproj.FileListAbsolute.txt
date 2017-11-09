@@ -1,0 +1,5 @@
+c:\users\pima\documents\visual studio 2015\Projects\RFEM_memberForces\RFEM_memberForces\bin\RFEM_memberForces.dll
+c:\users\pima\documents\visual studio 2015\Projects\RFEM_memberForces\RFEM_memberForces\bin\RFEM_memberForces.pdb
+c:\users\pima\documents\visual studio 2015\Projects\RFEM_memberForces\RFEM_memberForces\obj\Debug64\RFEM_memberForces.csprojResolveAssemblyReference.cache
+c:\users\pima\documents\visual studio 2015\Projects\RFEM_memberForces\RFEM_memberForces\obj\Debug64\RFEM_memberForces.dll
+c:\users\pima\documents\visual studio 2015\Projects\RFEM_memberForces\RFEM_memberForces\obj\Debug64\RFEM_memberForces.pdb
