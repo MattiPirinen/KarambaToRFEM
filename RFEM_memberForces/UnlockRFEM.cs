@@ -1,20 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using Dlubal.RFEM5;
 using Grasshopper.Kernel;
 using Rhino.Geometry;
-using Grasshopper.Kernel.Types;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 namespace RFEM_memberForces
 {
-    public class TranslateKaramba : GH_Component
+    public class UnlockRFEM : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the TranslateKaramba class.
+        /// Initializes a new instance of the UnlockRFEM class.
         /// </summary>
-        public TranslateKaramba()
-          : base("TranslateKaramba", "TK",
-              "translate karamba model data into rfem model data.",
-              "RFEM", "Model")
+        public UnlockRFEM()
+          : base("UnlockRFEM", "Nickname",
+              "Description",
+              "RFEM", "misc")
         {
         }
 
@@ -23,10 +25,8 @@ namespace RFEM_memberForces
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("testi,", "testi", "testi", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Excecute", "GO", "Sends the model data to RFEM", GH_ParamAccess.item);
-            pManager.AddGenericParameter("RFEM model", "rModel", "RFEM model", GH_ParamAccess.item);
-            pManager[2].Optional = true;
+            pManager.AddBooleanParameter("GO", "GO", "excecute", GH_ParamAccess.item);
+
         }
 
         /// <summary>
@@ -42,22 +42,34 @@ namespace RFEM_memberForces
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            bool go = false;
-            Karamba.Models.GH_Model testiModel = null;
-            GH_ObjectWrapper wrapper = null;
-            if (!DA.GetData(1,ref go)) { return; }
-            if (!DA.GetData(0, ref testiModel)) { return; }
-            if (!DA.GetData(2, ref wrapper))
+            IApplication app = null;
+            try
             {
-                if (go) KarambaToRFEM.SendModel(testiModel.Value);
+                //Get active RFEM5 application
+                app = Marshal.GetActiveObject("RFEM5.Application") as IApplication;
+                app.UnlockLicense();
             }
-            else
 
+
+            catch (Exception ex)
             {
-                Dlubal.RFEM5.Model rModel = wrapper.Value as Dlubal.RFEM5.Model;
-                if (go) KarambaToRFEM.SendModel(testiModel.Value, rModel);
+                MessageBox.Show(ex.Message, ex.Source, MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
-            
+            finally
+            {
+
+                //Release COM object
+                if (app != null)
+                {
+                    app.UnlockLicense();
+                    app = null;
+                }
+
+                //Cleans Garbage collector for releasing all COM interfaces and objects
+                System.GC.Collect();
+                System.GC.WaitForPendingFinalizers();
+            }
+
         }
 
         /// <summary>
@@ -78,7 +90,7 @@ namespace RFEM_memberForces
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("986612ec-eb65-447d-9814-af29513b730c"); }
+            get { return new Guid("37565ea2-7485-4016-9a97-23379079185a"); }
         }
     }
 }
