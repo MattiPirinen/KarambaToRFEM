@@ -6,12 +6,12 @@ using Rhino.Geometry;
 using System.Windows.Forms;
 namespace RFEM_memberForces
 {
-    public class Visual_testing_Component : GH_Component
+    public class Visual_testing : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the Visual_testing_Component class.
         /// </summary>
-        public Visual_testing_Component()
+        public Visual_testing()
           : base("Visual_testing_Component", "VS",
               "Description",
               "RFEM", "misc")
@@ -29,6 +29,8 @@ namespace RFEM_memberForces
         {
             pManager.AddNumberParameter("Values", "V", "Sorted values", GH_ParamAccess.list);
         }
+
+        
 
         /// <summary>
         /// This is the method that actually does the work.
@@ -55,7 +57,7 @@ namespace RFEM_memberForces
             DA.SetDataList(0, values);
 
         }
-        /*
+
         private bool m_absolute = false;
         public bool Absolute
         {
@@ -115,7 +117,7 @@ namespace RFEM_memberForces
                 return null;
             }
         }
-        */
+
         /// <summary>
         /// Gets the unique ID for this component. Do not change this ID after release.
         /// </summary>
@@ -125,3 +127,4 @@ namespace RFEM_memberForces
         }
     }
 }
+
