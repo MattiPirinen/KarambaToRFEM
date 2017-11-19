@@ -8,3 +8,5 @@ C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberFor
 C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.csprojResolveAssemblyReference.cache
 C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.dll
 C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.pdb
+C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.Properties.Resources.resources
+C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.csproj.GenerateResource.Cache

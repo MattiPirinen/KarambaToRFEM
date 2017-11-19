@@ -63,20 +63,35 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Component_visualization.cs" />
-    <Compile Include="Custom_attributes.cs" />
-    <Compile Include="David.cs" />
-    <Compile Include="getMaterialNames.cs" />
-    <Compile Include="getCrossSectionNames.cs" />
-    <Compile Include="KarambaToRFEM.cs" />
-    <Compile Include="keepRfemOpen.cs" />
-    <Compile Include="MySimpleIntegerParameter.cs" />
-    <Compile Include="RFEMmemberForcesComponent.cs" />
-    <Compile Include="RFEM_memberForcesInfo.cs" />
+    <Compile Include="Classes\SupportInf.cs" />
+    <Compile Include="Components\RFEM_Support.cs" />
+    <Compile Include="misc\Custom_attributes.cs" />
+    <Compile Include="misc\David.cs" />
+    <Compile Include="Components\getMaterialNames.cs" />
+    <Compile Include="Components\getCrossSectionNames.cs" />
+    <Compile Include="Classes\KarambaToRFEM.cs" />
+    <Compile Include="Components\keepRfemOpen.cs" />
+    <Compile Include="misc\MySimpleIntegerParameter.cs" />
+    <Compile Include="Components\RFEMmemberForcesComponent.cs" />
+    <Compile Include="misc\RFEM_memberForcesInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TranslateKaramba.cs" />
-    <Compile Include="UnlockRFEM.cs" />
-    <Compile Include="Visual_testing.cs" />
+    <Compile Include="Components\TranslateKaramba.cs" />
+    <Compile Include="Components\UnlockRFEM.cs" />
+    <Compile Include="misc\Visual_testing.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Icons\Support.png" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

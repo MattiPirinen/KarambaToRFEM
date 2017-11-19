@@ -7,18 +7,21 @@ using Grasshopper.GUI;
 using Grasshopper.GUI.Canvas;
 using System.Windows.Forms;
 using System.Drawing;
+using Dlubal.RFEM5;
+using RFEM_memberForces.Classes;
+using Grasshopper.Kernel.Types;
 
 namespace RFEM_memberForces
 {
-    public class Component_visualization : GH_Component
+    public class RFEM_Support : GH_Component
     {
         /// <summary>
         /// Initializes a new instance of the Component_visualization class.
         /// </summary>
-        public Component_visualization()
-          : base("Component_visualization", "Nickname",
-              "Description",
-              "RFEM", "misc")
+        public RFEM_Support()
+          : base("RFEM_Support", "RSupport",
+              "Creates a RFEM support where springs can be determined to the support",
+              "RFEM", "Model")
         {
         }
 
@@ -27,8 +30,14 @@ namespace RFEM_memberForces
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddAngleParameter("a", "a", "a", GH_ParamAccess.item);
-            pManager.AddAngleParameter("b", "b", "b", GH_ParamAccess.item);
+            pManager.AddPointParameter("Positions", "Pos", "Point coordinates of the supports", GH_ParamAccess.list);
+            pManager.AddVectorParameter("Translation Springs", "Trans", "Translation spring stiffnesses [kN/m]", GH_ParamAccess.item);
+            pManager.AddVectorParameter("Rotation Springs", "Rot", "Rotation spring stiffnesses [kN/rad]", GH_ParamAccess.item);
+            pManager.AddPlaneParameter("Planes", "Plane", "Orientation planes of the supports", GH_ParamAccess.item);
+            pManager[1].Optional = true;
+            pManager[2].Optional = true;
+            pManager[3].Optional = true;
+            
         }
 
         /// <summary>
@@ -36,7 +45,7 @@ namespace RFEM_memberForces
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
-            pManager.AddArcParameter("u", "", "", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Support", "Support", "RFEM support", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -45,6 +54,25 @@ namespace RFEM_memberForces
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
+            List<Point3d> ghPoints = new List<Point3d>();
+            Vector3d transSprints = new Vector3d(0, 0, 0);
+            Vector3d rotSprints = new Vector3d(0, 0, 0);
+            DA.GetDataList(0,ghPoints);
+            DA.GetData(1,ref transSprints);
+            DA.GetData(2, ref rotSprints);
+
+            Attributes_Custom ca = m_attributes as Attributes_Custom;
+            NodalSupport support = new NodalSupport();
+            if (!ca.SelectedButtons[0]) support.SupportConstantX = transSprints.X * 1000; else support.SupportConstantX = -1;
+            if (!ca.SelectedButtons[1]) support.SupportConstantY = transSprints.Y * 1000; else support.SupportConstantY = -1;
+            if (!ca.SelectedButtons[2]) support.SupportConstantZ = transSprints.Z * 1000; else support.SupportConstantZ = -1;
+            if (!ca.SelectedButtons[3]) support.RestraintConstantX = rotSprints.X * 1000; else support.RestraintConstantX = -1;
+            if (!ca.SelectedButtons[4]) support.RestraintConstantY = rotSprints.Y * 1000; else support.RestraintConstantY = -1;
+            if (!ca.SelectedButtons[5]) support.RestraintConstantZ = rotSprints.Z * 1000; else support.RestraintConstantZ = -1;
+
+
+            SupportInf container = new SupportInf(ghPoints, support);
+            DA.SetData(0, new GH_ObjectWrapper(container));
         }
 
         /// <summary>
@@ -56,7 +84,7 @@ namespace RFEM_memberForces
             {
                 //You can add image files to your project resources and access them like this:
                 // return Resources.IconForThisComponent;
-                return null;
+                return RFEM_memberForces.Properties.Resources.Support;
             }
         }
         
@@ -83,31 +111,27 @@ namespace RFEM_memberForces
     {
         public Attributes_Custom(GH_Component owner) : base(owner) { }
 
-
+        public bool[] SelectedButtons { get { return _selected; } }
 
 
         private List<RectangleF> _recList = new List<RectangleF>();
         private bool[] _selected = { false, false, false, false,false,false };
-
+        private string[] texts = { "Tx", "Ty", "Tz", "Mx", "My", "Mz" };
         protected override void Layout()
         {
+
+
+
             base.Layout();
             _recList = new List<RectangleF>();
             System.Drawing.Rectangle rec0 = GH_Convert.ToRectangle(Bounds);
-            rec0.Height += 22;
-            rec0.Width = 110;
+            rec0.Height += 40;
+            rec0.Width = 140;
 
-
-            System.Drawing.Rectangle rec1 = rec0;
-            rec1.Y = rec1.Bottom - 22;
-            rec1.Height = 22;
-            rec1.Inflate(-2, -2);
-            _width = rec0.Width;
             Bounds = rec0;
-            ButtonBounds = rec1;
-            for (int i = 1; i < 7; i++)
+            for (int i = 0; i < 6; i++)
             {
-                _recList.Add(new RectangleF(Bounds.Left + 15 * i, Bounds.Bottom - 15, 10, 10));
+                _recList.Add(new RectangleF((Bounds.Left+9) + 20 * i, Bounds.Bottom - 15, 10, 10));
             }
 
 
@@ -133,8 +157,10 @@ namespace RFEM_memberForces
             }
         }
 
-
-
+        private void DrawString(Graphics graphics, PointF upperLeft, string text)
+        {
+            graphics.DrawString(text, new Font("Verdena",(float)6.5), Brushes.Black, upperLeft);
+        }
 
         protected override void Render(GH_Canvas canvas, System.Drawing.Graphics graphics, GH_CanvasChannel channel)
         {
@@ -152,6 +178,8 @@ namespace RFEM_memberForces
                 for (int i = 0; i < _selected.Length; i++)
                 {
                     DrawRadioButton(graphics, new PointF(_recList[i].Left+5, _recList[i].Bottom - 5), _selected[i]);
+                    DrawString(graphics, new PointF(_recList[i].Left - 4, _recList[i].Bottom - 24), texts[i]);
+
                 }
                 
 
@@ -159,6 +187,7 @@ namespace RFEM_memberForces
         }
         public override GH_ObjectResponse RespondToMouseDown(GH_Canvas sender, GH_CanvasMouseEvent e)
         {
+            
             if (e.Button == System.Windows.Forms.MouseButtons.Left)
             {
                 System.Drawing.RectangleF rec = ButtonBounds;
@@ -167,6 +196,7 @@ namespace RFEM_memberForces
                     if (_recList[i].Contains(e.CanvasLocation))
                     {
                         _selected[i]=!_selected[i];
+                        Owner.ExpireSolution(true);
                     }
                 }
             }
