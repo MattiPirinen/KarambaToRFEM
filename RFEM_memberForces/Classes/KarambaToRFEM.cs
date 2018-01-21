@@ -18,6 +18,24 @@ namespace RFEM_memberForces
     class KarambaToRFEM
     {
 
+        private static IApplication _iApp;
+        private static IModel _rModel;
+        private static ICalculation _calc;
+
+        public static IModel RModel
+        {
+            get
+            {
+                return _rModel;
+            }
+
+            set
+            {
+                _rModel = value;
+            }
+        }
+
+
         //Help method to see what crossSections there are in the model
         public static void printCrossSectionIDs(IModelData rData)
         {
@@ -34,121 +52,246 @@ namespace RFEM_memberForces
 
         }
 
-        public static void SendModel(Karamba.Models.Model kModel,IModel rModel)
+        //This method closes the connection to RFEM
+        public static void CloseConnection()
         {
-
-            createModel(kModel, rModel);
+            //Release COM object
+            if (_iApp != null)
+            {
+                _iApp.UnlockLicense();
+                _iApp = null;
+            }
+            //Cleans Garbage collector for releasing all COM interfaces and objects
+            System.GC.Collect();
+            System.GC.WaitForPendingFinalizers();
         }
 
-        //This method sends the model to the RFEM
-        public static void SendModel(Karamba.Models.Model kModel)
+        //this method excecutes a calculation
+        public static void CalcModel()
         {
-
-
-
-            IApplication app = null;
-            IModel rModel = null;
-
-            try
+            if (_rModel != null)
             {
-                //Get active RFEM5 application
-                app = Marshal.GetActiveObject("RFEM5.Application") as IApplication;
-                app.LockLicense();
-                rModel = app.GetActiveModel();
-                createModel(kModel, rModel);
+                _calc = _rModel.GetCalculation();
+                _calc.Calculate(LoadingType.LoadCaseType, 1);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, ex.Source, MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            
+        }
 
-            finally
+        //Gets result from the model
+        public static List<double> getMemberMoments()
+        {
+            List<double> vy = new List<double>();
+            if (_rModel != null && _calc != null)
             {
-                //Release COM object
-                if (app != null)
+                IResults results = _calc.GetResultsInFeNodes(LoadingType.LoadCaseType, 1);
+                MemberForces[] mf =  results.GetMemberInternalForces(1, ItemAt.AtIndex, true);
+                
+                foreach (MemberForces m in mf)
                 {
-                    app.UnlockLicense();
-                    app = null;
+                    vy.Add(m.Forces.Y);
                 }
-                //Cleans Garbage collector for releasing all COM interfaces and objects
-                System.GC.Collect();
-                System.GC.WaitForPendingFinalizers();
+                
             }
+            return vy;
+        }
+
+        //This method opens connection to the RFEM model
+        public static void OpenConnection()
+        {
+            if (_iApp == null)
+            { 
+                try
+                {
+                    //Get active RFEM5 application
+                    _iApp = Marshal.GetActiveObject("RFEM5.Application") as IApplication;
+                    _iApp.LockLicense();
+                    RModel = _iApp.GetActiveModel();
+                
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, ex.Source, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    //Release COM object
+                    if (_iApp != null)
+                    {
+                        _iApp.UnlockLicense();
+                        _iApp = null;
+                    }
+                    //Cleans Garbage collector for releasing all COM interfaces and objects
+                    System.GC.Collect();
+                    System.GC.WaitForPendingFinalizers();
+                }
+            }
+        }
+
+        public static void CreateModel(Karamba.Models.Model kModel)
+        {
+            if (RModel != null)
+            {
+                Node[] rNodes = Nodes(kModel.nodes);
+                NodalSupport[] rSupports = Supports(kModel.supports);
+                Material[] rMaterials = Materials(kModel.materials);
+                CrossSection[] rCrossSections = CrossSections(kModel.crosecs, kModel);
+                Tuple<Member[], Dlubal.RFEM5.Line[]> vali = Members(kModel.elems);
+                Member[] rMembers = vali.Item1;
+                Dlubal.RFEM5.Line[] rLines = vali.Item2;
+                LoadCase[] lCases = LoadCases(kModel);
+                MemberLoad[] rMemberLoads = MemberLoads(kModel.eloads);
+                NodalLoad[] rNodalLoads = NodalLoads(kModel.ploads);
+                MemberHinge[] rMemberHinges = MemberHinges(kModel.joints);
+
+                //Get active RFEM5 application
+                try
+                {
+                    IModelData rData = RModel.GetModelData();
+                    ILoads rLoads = RModel.GetLoads();
+
+                    //Cleans the model and load data data
+                    rData.PrepareModification();
+                    rData.Clean();
+                    rData.FinishModification();
+
+                    rLoads.PrepareModification();
+                    rLoads.Clean();
+                    rLoads.FinishModification();
+
+                    //Model elements
+                    rData.PrepareModification();
+
+                    rData.SetNodes(rNodes);
+                    rData.SetNodalSupports(rSupports);
+                    rData.SetMaterials(rMaterials);
+                    rData.SetCrossSections(rCrossSections);
+                    rData.SetMemberHinges(rMemberHinges);
+                    rData.SetLines(rLines);
+                    rData.SetMembers(rMembers);
+
+                    rData.FinishModification();
+
+                    //Load cases
+                    rLoads.PrepareModification();
+                    rLoads.SetLoadCases(lCases);
+                    rLoads.FinishModification();
+
+                    //Loads
+                    setRFEMmemberLoads(rLoads, rMemberLoads);
+                    setRFEMnodalLoads(rLoads, rNodalLoads);
+
+
+                }
+
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, ex.Source, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+
 
 
         }
 
-
-
-        private static void createModel(Karamba.Models.Model kModel, IModel rModel)
+        //Sets all the nodal loads to RFEM
+        private static void setRFEMnodalLoads(ILoads rLoads, NodalLoad[] rNodalLoads)
         {
-            Node[] rNodes = Nodes(kModel.nodes);
-            NodalSupport[] rSupports = Supports(kModel.supports);
-            Material[] rMaterials = Materials(kModel.materials);
-            CrossSection[] rCrossSections = CrossSections(kModel.crosecs, kModel);
-            Tuple<Member[], Dlubal.RFEM5.Line[]> vali = Members(kModel.elems);
-            Member[] rMembers = vali.Item1;
-            Dlubal.RFEM5.Line[] rLines = vali.Item2;
-            LoadCase[] lCases = LoadCases();
-            MemberLoad[] rMemberLoads = MemberLoads(kModel.eloads);
-            NodalLoad[] rNodalLoads = NodalLoads(kModel.ploads);
-            MemberHinge[] rMemberHinges = MemberHinges(kModel.joints);
-
-            //Get active RFEM5 application
-            try
+            Dictionary<int, List<NodalLoad>> loads = new Dictionary<int, List<NodalLoad>>();
+            foreach (NodalLoad rNodalLoad in rNodalLoads)
             {
-                IModelData rData = rModel.GetModelData();
-                ILoads rLoads = rModel.GetLoads();
+                if (!loads.ContainsKey(int.Parse(rNodalLoad.Comment)))
+                {
+                    List<NodalLoad> nLoad = new List<NodalLoad>();
+                    NodalLoad a = rNodalLoad;
+                    a.Comment = "";
+                    nLoad.Add(a);
 
-                //Model elements
-                rData.PrepareModification();
-
-                rData.SetNodes(rNodes);
-                rData.SetNodalSupports(rSupports);
-                rData.SetMaterials(rMaterials);
-                rData.SetCrossSections(rCrossSections);
-                rData.SetMemberHinges(rMemberHinges);
-                rData.SetLines(rLines);
-                rData.SetMembers(rMembers);
-
-                rData.FinishModification();
-
-                //Load cases
-                rLoads.PrepareModification();
-                rLoads.SetLoadCases(lCases);
-                rLoads.FinishModification();
-
-                //Loads
-                ILoadCase lCase = rLoads.GetLoadCase(1, ItemAt.AtNo);
+                    loads[int.Parse(rNodalLoad.Comment)] = nLoad;
+                }
+                else
+                {
+                    NodalLoad a = rNodalLoad;
+                    a.Comment = "";
+                    loads[int.Parse(rNodalLoad.Comment)].Add(a);
+                }
+            }
+            foreach (int n in loads.Keys)
+            {
+                ILoadCase lCase = rLoads.GetLoadCase(n, ItemAt.AtNo);
                 lCase.PrepareModification();
-                lCase.SetMemberLoads(rMemberLoads);
-                lCase.SetNodalLoads(rNodalLoads);
+
+                lCase.SetNodalLoads(loads[n].ToArray());
                 lCase.FinishModification();
-
             }
-
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, ex.Source, MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-
-
         }
 
-        //TODO Only a mockup implementation ready
-        //This method creates a load case
-        private static LoadCase[] LoadCases()
+        //Sets all the member loads to RFEM (Only uniform distributed load is implemented
+        private static void setRFEMmemberLoads(ILoads rLoads, MemberLoad[] rMemberLoads)
         {
-            LoadCase lCase = new LoadCase();
-            lCase.SelfWeight = false;
-            lCase.Loading.No = 1;
-            LoadCase[] lCaseArray = { lCase };
+
+            Dictionary<int, List<MemberLoad>> loads = new Dictionary<int, List<MemberLoad>>();
+            foreach (MemberLoad rMemberLoad in rMemberLoads)
+            {
+                if (!loads.ContainsKey(int.Parse(rMemberLoad.Comment)))
+                {
+                    List<MemberLoad> nLoad = new List<MemberLoad>();
+                    MemberLoad a = rMemberLoad;
+                    a.Comment = "";
+                    nLoad.Add(a);
+
+                    loads[int.Parse(rMemberLoad.Comment)] = nLoad;
+                }
+                else
+                {
+                    MemberLoad a = rMemberLoad;
+                    a.Comment = "";
+                    loads[int.Parse(rMemberLoad.Comment)].Add(a);
+                }
+            }
+            foreach (int n in loads.Keys)
+            {
+                ILoadCase lCase = rLoads.GetLoadCase(n, ItemAt.AtNo);
+                lCase.PrepareModification();
+
+                lCase.SetMemberLoads(loads[n].ToArray());
+                lCase.FinishModification();
+            }
+        }
 
 
-            return lCaseArray;
+        //Create all the load cases
+        private static LoadCase[] LoadCases(Karamba.Models.Model kModel)
+        {
+
+            HashSet<int> lCaseNumbers = new HashSet<int>();
+            //Get load cases used in eLoads
+            foreach(Karamba.Loads.ElementLoad eLoad in kModel.eloads)
+            {
+                lCaseNumbers.Add(eLoad.loadcase);
+            }
+            //get load cases used in ploads
+            foreach(Karamba.Loads.PointLoad pLoad in kModel.ploads)
+            {
+                lCaseNumbers.Add(pLoad.loadcase);
+            }
+
+            List<LoadCase> rLoadCases = new List<LoadCase>();
+            //Create loadCases
+            foreach(int elem in lCaseNumbers)
+            {
+                LoadCase lCase = new LoadCase();
+                lCase.ToSolve = true;
+                lCase.SelfWeight = false;
+                if (elem == 0)
+                {
+                    MessageBox.Show("0 cannot be used as loadCase number in RFEM. The number is changed to 999", "Warning", MessageBoxButtons.OK);
+                    lCase.Loading.No = 999;
+                }
+                else lCase.Loading.No = elem;
+
+                rLoadCases.Add(lCase);
+            }
+
+            return rLoadCases.ToArray();
         }
         
-
         //This method creates memberhinges
         private static MemberHinge[] MemberHinges(List<Karamba.CrossSections.CroSec_Joint> kJoints)
         {
@@ -196,11 +339,14 @@ namespace RFEM_memberForces
         //This method creates node loads
         private static NodalLoad[] NodalLoads(List<Karamba.Loads.PointLoad> kPLoads)
         {
-            Dictionary<Tuple<Vector3d, Vector3d>, NodalLoad> rNodalLoads = new Dictionary<Tuple<Vector3d,Vector3d>, NodalLoad>();
+            
+
+            Dictionary<Tuple<Vector3d, Vector3d,int>, NodalLoad> rNodalLoads = new Dictionary<Tuple<Vector3d,Vector3d,int>, NodalLoad>();
             foreach (Karamba.Loads.PointLoad kPLoad in kPLoads)
             {
-                if (!rNodalLoads.ContainsKey(new Tuple<Vector3d, Vector3d>(kPLoad.force, kPLoad.moment)))
+                if (!rNodalLoads.ContainsKey(new Tuple<Vector3d, Vector3d,int>(kPLoad.force, kPLoad.moment,kPLoad.loadcase)))
                 {
+                    
                     NodalLoad rNodalLoad = new NodalLoad();
                     rNodalLoad.NodeList = kPLoad.node_ind.ToString();
                     NodalLoadComponent component = new NodalLoadComponent();
@@ -208,19 +354,22 @@ namespace RFEM_memberForces
                     rNodalLoad.Component = component;
                     rNodalLoad.NodeList = (kPLoad.node_ind+1).ToString();
                     rNodalLoad.No = rNodalLoads.Count + 1;
-                    rNodalLoads[new Tuple<Vector3d, Vector3d>(kPLoad.force, kPLoad.moment)] = rNodalLoad;
+                    if (kPLoad.loadcase == 0) rNodalLoad.Comment = "999";
+                    else rNodalLoad.Comment = kPLoad.loadcase.ToString();
+                    rNodalLoads[new Tuple<Vector3d, Vector3d,int>(kPLoad.force, kPLoad.moment,kPLoad.loadcase)] = rNodalLoad;
                 }
                 else
                 {
-                    NodalLoad temp = rNodalLoads[new Tuple<Vector3d, Vector3d>(kPLoad.force, kPLoad.moment)];
+                    NodalLoad temp = rNodalLoads[new Tuple<Vector3d, Vector3d,int>(kPLoad.force, kPLoad.moment,kPLoad.loadcase)];
                     temp.NodeList += "," + (kPLoad.node_ind + 1).ToString();
-                    rNodalLoads[new Tuple<Vector3d, Vector3d>(kPLoad.force, kPLoad.moment)] = temp;
+                    rNodalLoads[new Tuple<Vector3d, Vector3d, int>(kPLoad.force, kPLoad.moment,kPLoad.loadcase)] = temp;
                 }
                 
             }
             return rNodalLoads.Values.ToArray();
         }
 
+        //Fill loads to nodal load component
         private static void fillComponent(ref NodalLoadComponent component, PointLoad kPLoad)
         {
             component.Force = new Point3D { X = kPLoad.force.X*1000, Y = kPLoad.force.Y * 1000, Z = kPLoad.force.Z * 1000 };
@@ -230,7 +379,7 @@ namespace RFEM_memberForces
         //This method creates member loads
         private static MemberLoad[] MemberLoads(List<Karamba.Loads.ElementLoad> kElementLoads)
         {
-            Dictionary<Vector3d, MemberLoad> forceList = new Dictionary<Vector3d, MemberLoad>();
+            Dictionary<Tuple<Vector3d,int>, MemberLoad> forceList = new Dictionary<Tuple<Vector3d,int>, MemberLoad>();
             foreach (Karamba.Loads.ElementLoad kElementLoad in kElementLoads)
             {
                 if (kElementLoad.GetType() == typeof(Karamba.Loads.UniformlyDistLoad))
@@ -240,31 +389,36 @@ namespace RFEM_memberForces
             return forceList.Values.ToArray();
         }
         //this method creates uniform member load
-        private static void createUniformLoad(Karamba.Loads.ElementLoad kElementLoad, ref Dictionary<Vector3d, MemberLoad> forceList)
+        private static void createUniformLoad(Karamba.Loads.ElementLoad kElementLoad, ref Dictionary<Tuple<Vector3d,int>, MemberLoad> forceList)
         {
 
-            Karamba.Loads.UniformlyDistLoad load = kElementLoad as Karamba.Loads.UniformlyDistLoad;
-            if (!forceList.ContainsKey(load.Load))
+            Karamba.Loads.UniformlyDistLoad load1 = kElementLoad as Karamba.Loads.UniformlyDistLoad;
+            if (!forceList.ContainsKey(new Tuple<Vector3d, int>(load1.Load, load1.loadcase)))
             {
                 MemberLoad rMemberLoad = new MemberLoad();
-                if (load.Load.X != 0)
+                if (load1.Load.X != 0)
                 {
                     rMemberLoad.Direction = LoadDirectionType.GlobalXType;
-                    rMemberLoad.Magnitude1 = load.Load.X * 1000;
+                    rMemberLoad.Magnitude1 = load1.Load.X * 1000;
                 }
-                else if (load.Load.Y != 0)
+                else if (load1.Load.Y != 0)
                 {
                     rMemberLoad.Direction = LoadDirectionType.GlobalYType;
-                    rMemberLoad.Magnitude1 = load.Load.Y * 1000;
+                    rMemberLoad.Magnitude1 = load1.Load.Y * 1000;
                 }
                 else
                 {
                     rMemberLoad.Direction = LoadDirectionType.GlobalZType;
-                    rMemberLoad.Magnitude1 = load.Load.Z * 1000;
+                    rMemberLoad.Magnitude1 = load1.Load.Z * 1000;
                 }
 
                 rMemberLoad.Type = LoadType.ForceType;
                 rMemberLoad.Distribution = LoadDistributionType.UniformType;
+                if (load1.loadcase == 0)
+                {
+                    rMemberLoad.Comment = "999";
+                }
+                else rMemberLoad.Comment = load1.loadcase.ToString();
                 int ind;
 
 
@@ -280,12 +434,12 @@ namespace RFEM_memberForces
 
                 rMemberLoad.No = forceList.Count + 1;
                 rMemberLoad.OverTotalLength = true;
-                forceList[load.Load] = rMemberLoad;
+                forceList[new Tuple<Vector3d,int>(load1.Load,load1.loadcase)] = rMemberLoad;
 
             }
             else
             {
-                MemberLoad temp = forceList[load.Load];
+                MemberLoad temp = forceList[Tuple.Create(load1.Load,load1.loadcase)];
 
                 int ind;
                 if (!string.IsNullOrEmpty(kElementLoad.beamId) && int.TryParse(kElementLoad.beamId.Substring(1), out ind))
@@ -297,7 +451,7 @@ namespace RFEM_memberForces
                     MessageBox.Show("Karamba beam naming was incorrect. Has to be of form E001 where E is identifier letter" +
                         "and 001 is number of the beam in the RFEM", "Error", MessageBoxButtons.OK);
                 }
-                forceList[load.Load] = temp;
+                forceList[Tuple.Create(load1.Load,load1.loadcase)] = temp;
             }
 
 

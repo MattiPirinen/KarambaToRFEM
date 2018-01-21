@@ -10,3 +10,14 @@ C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberFor
 C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.pdb
 C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.Properties.Resources.resources
 C:\Users\pima\Documents\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.csproj.GenerateResource.Cache
+T:\VISUAL STUDIO FILES\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.csprojResolveAssemblyReference.cache
+T:\VISUAL STUDIO FILES\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.Properties.Resources.resources
+T:\VISUAL STUDIO FILES\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.csproj.GenerateResource.Cache
+T:\VISUAL STUDIO FILES\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.dll
+T:\VISUAL STUDIO FILES\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.pdb
+T:\VISUAL STUDIO FILES\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\obj\Debug64\RFEM_memberForces.csproj.CoreCompileInputs.cache
+T:\VISUAL STUDIO FILES\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\bin\RFEM_memberForces.dll
+T:\VISUAL STUDIO FILES\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\bin\RFEM_memberForces.pdb
+T:\VISUAL STUDIO FILES\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\bin\Dlubal.RFEM5.dll
+T:\VISUAL STUDIO FILES\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\bin\karamba.dll
+T:\VISUAL STUDIO FILES\Visual Studio 2015\Projects\KarambaToRFEM\RFEM_memberForces\bin\Dlubal.RFEM5.xml

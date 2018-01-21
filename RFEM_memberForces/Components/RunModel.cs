@@ -1,20 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+
 using Grasshopper.Kernel;
 using Rhino.Geometry;
-using Grasshopper.Kernel.Types;
-using Dlubal.RFEM5;
 
-namespace RFEM_memberForces
+namespace RFEM_memberForces.Components
 {
-    public class TranslateKaramba : GH_Component
+    public class RunModel : GH_Component
     {
         /// <summary>
-        /// Initializes a new instance of the TranslateKaramba class.
+        /// Initializes a new instance of the RunModel class.
         /// </summary>
-        public TranslateKaramba()
-          : base("TranslateKaramba", "TK",
-              "translate karamba model data into rfem model data.",
+        public RunModel()
+          : base("Run RFEM Model", "RunModel",
+              "executes calculation in RFEM",
               "RFEM", "Model")
         {
         }
@@ -24,10 +23,7 @@ namespace RFEM_memberForces
         /// </summary>
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Karamba model,", "kModel", "Karamba model", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("Excecute", "GO", "Sends the model data to RFEM", GH_ParamAccess.item);
-            pManager.AddBooleanParameter("keep Model open", "Open", "If true keeps RFEM connection open", GH_ParamAccess.item);
-            pManager[2].Optional = true;
+            pManager.AddBooleanParameter("Execute", "GO", "Executes calculation", GH_ParamAccess.item);
         }
 
         /// <summary>
@@ -35,6 +31,7 @@ namespace RFEM_memberForces
         /// </summary>
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
         {
+            pManager.AddNumberParameter("testi", "testi", "testi", GH_ParamAccess.list);
         }
 
         /// <summary>
@@ -43,29 +40,16 @@ namespace RFEM_memberForces
         /// <param name="DA">The DA object is used to retrieve from inputs and store in outputs.</param>
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            bool go = false;
-            Karamba.Models.GH_Model kModel = null;
-            bool kOpen = false;
-            if (!DA.GetData(1,ref go)) { return; }
-            if (!DA.GetData(0, ref kModel)) { return; }
-            DA.GetData(2, ref kOpen);
-            if (kOpen){
-                KarambaToRFEM.OpenConnection();
-                if (go)
-                {
-                    KarambaToRFEM.CreateModel(kModel.Value);
-                }
-            }
-            else
+            Boolean go = false;
+            if(!DA.GetData(0,ref go)) { return; }
+            if (go)
             {
-                if (go)
-                {
-                    KarambaToRFEM.OpenConnection();
-                    KarambaToRFEM.CreateModel(kModel.Value);
-                }
+                KarambaToRFEM.OpenConnection();
+                KarambaToRFEM.CalcModel();
+                List<double> result = KarambaToRFEM.getMemberMoments();
                 KarambaToRFEM.CloseConnection();
+                DA.SetDataList(0, result);
             }
-
         }
 
         /// <summary>
@@ -86,7 +70,7 @@ namespace RFEM_memberForces
         /// </summary>
         public override Guid ComponentGuid
         {
-            get { return new Guid("986612ec-eb65-447d-9814-af29513b730c"); }
+            get { return new Guid("d1d00a92-7c45-41a8-8ebd-3d375f9655a7"); }
         }
     }
 }

@@ -33,11 +33,14 @@ namespace RFEM_memberForces
             pManager.AddPointParameter("Positions", "Pos", "Point coordinates of the supports", GH_ParamAccess.list);
             pManager.AddVectorParameter("Translation Springs", "Trans", "Translation spring stiffnesses [kN/m]", GH_ParamAccess.item);
             pManager.AddVectorParameter("Rotation Springs", "Rot", "Rotation spring stiffnesses [kN/rad]", GH_ParamAccess.item);
-            pManager.AddPlaneParameter("Planes", "Plane", "Orientation planes of the supports", GH_ParamAccess.item);
+            //TODO Plane not implemented yet!
+            //pManager.AddPlaneParameter("Planes", "Plane", "Orientation planes of the supports", GH_ParamAccess.item); 
             pManager[1].Optional = true;
             pManager[2].Optional = true;
-            pManager[3].Optional = true;
-            
+
+            //TODO Plane not implemented yet!
+            //pManager[3].Optional = true;
+
         }
 
         /// <summary>
@@ -57,9 +60,17 @@ namespace RFEM_memberForces
             List<Point3d> ghPoints = new List<Point3d>();
             Vector3d transSprints = new Vector3d(0, 0, 0);
             Vector3d rotSprints = new Vector3d(0, 0, 0);
+
+            //TODO planes Not Implemented
+            //Plane locPlane = Plane.WorldXY;
+
+
             DA.GetDataList(0,ghPoints);
             DA.GetData(1,ref transSprints);
             DA.GetData(2, ref rotSprints);
+            
+            //TODO Planes not implemented yet.
+            //DA.GetData(3, ref locPlane);
 
             Attributes_Custom ca = m_attributes as Attributes_Custom;
             NodalSupport support = new NodalSupport();
@@ -69,6 +80,7 @@ namespace RFEM_memberForces
             if (!ca.SelectedButtons[3]) support.RestraintConstantX = rotSprints.X * 1000; else support.RestraintConstantX = -1;
             if (!ca.SelectedButtons[4]) support.RestraintConstantY = rotSprints.Y * 1000; else support.RestraintConstantY = -1;
             if (!ca.SelectedButtons[5]) support.RestraintConstantZ = rotSprints.Z * 1000; else support.RestraintConstantZ = -1;
+            //support.UserDefinedReferenceSystem
 
 
             SupportInf container = new SupportInf(ghPoints, support);
